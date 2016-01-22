@@ -196,6 +196,7 @@ filters = [
     'http://spark.api.xiami.com/api?*method=Start.init*',
     'http://spark.api.xiami.com/api?*method=Songs.getTrackDetail*',
     'http://spark.api.xiami.com/api?*method=Songs.detail*',
+    'http://spark.api.xiami.com/api?*method=mobile.start-init*',
     // for PC Clients only
     'http://iplocation.geo.qiyi.com/cityjson',
     'http://sns.video.qq.com/tunnel/fcgi-bin/tunnel*',
