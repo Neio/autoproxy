@@ -57,7 +57,13 @@ var PacApp = function(){
 
         if (client_request.url === '/update') {
             self.update_proxy_status(proxy_list);
-            client_response.end('<a href="/proxies"> Check Status </a>');
+            var result = '<a href="/proxies"> Check Status </a>';
+            client_response.writeHead(200, {
+                'Content-Type': 'text/html',
+                'Content-Length': result.length,
+                'Cache-Control': 'public, max-age=10'
+            });
+            client_response.end(result);
             return;
         }
         if (client_request.url === '/status') {
