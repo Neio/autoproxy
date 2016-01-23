@@ -10,7 +10,7 @@ var Initialize = function(){
     http.globalAgent.maxSockets = Infinity;
     process.on('uncaughtException', function(err) {
         console.error('[auto proxy] Caught uncaughtException: ' + err, err.stack);
-        process.exit(213);
+        //process.exit(213);
     });
 };
 
@@ -66,6 +66,8 @@ var AutoProxyApp = function() {
     self.start = function(){
       var pacApp = new pac.PacApp();
       pacApp.start(self.port, self.debug_port);
+
+      pacApp.schedule_proxy_status_update();
     }
 
     self.initialize = function() {

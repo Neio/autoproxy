@@ -5,10 +5,28 @@ var util = require('util');
 var domain = require('domain');
 var cluster = require('cluster');
 //var globToRegExp = require('glob-to-regexp');
+var LINQ = require("node-linq").LINQ;
 
-var generatePacContent = function(default_fallback){
+function object_to_linq(obj){
+    var result = [];
+    for(k in obj){
+        var target = obj[k];
+        target.__key = k;
+        result.push(target);
+    }
+    return new LINQ(result);
+};
+
+var generatePacContent = function(proxies, default_fallback){
   var result = "function FindProxyForURL(url, host) {\r\n";
-  result += "  var proxy = 'PROXY 120.198.231.21:80; PROXY 120.198.231.23:80; PROXY 120.198.231.24:80';\r\n";
+  result += "  var proxy = \"";
+  var onlineProxies = object_to_linq(proxies)
+    .Where(function(p){ return p.online;})
+    .OrderBy(function(p){ return p.ping; })
+    .Select(function(p){ return "PROXY " + p.__key; })
+    .ToArray().join(";");
+
+  result += onlineProxies + "\";\r\n";
   urls.filters.forEach(function(filter){
     result += '  if(shExpMatch(url, "'+ filter  +'")){ return proxy;}\r\n';
   });
