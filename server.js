@@ -26,10 +26,7 @@ var AutoProxyApp = function() {
         //  Set the environment variables we need.
         self.ipaddress = process.env.OPENSHIFT_NODEJS_IP;
         self.port      = process.env.OPENSHIFT_NODEJS_PORT || 8888;
-        self.enable_debug = true;
-        if (process.env.OPENSHIFT_APP_UUID){
-            self.enable_debug = false;
-        }
+        self.enable_debug = false;
         self.debug_port = 5050;
         if (typeof self.ipaddress === "undefined") {
             console.warn('No OPENSHIFT_NODEJS_IP var, using 0.0.0.0');
@@ -73,13 +70,12 @@ var AutoProxyApp = function() {
             var pacApp = new pac.PacApp();
             pacApp.start(self.port);
 
-            console.log("enabling debug..");
+            console.log("enabling debug...");
             pacApp.start_debug(self.port, self.debug_port);
             pacApp.schedule_proxy_status_update();
           });
       }
       else {
-
         var pacApp = new pac.PacApp();
         pacApp.start(self.port);
         pacApp.schedule_proxy_status_update();
@@ -88,6 +84,7 @@ var AutoProxyApp = function() {
     }
 
     self.initialize = function() {
+        console.log('bootstrap app');
         self.setupVariables();
         self.setupTerminationHandlers();
     };

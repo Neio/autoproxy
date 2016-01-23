@@ -92,11 +92,15 @@ var PacApp = function(){
 
     self.schedule_proxy_status_update = function(){
         //self.update_proxy_status(self.proxy_list);
-        self.update_proxy_status(proxy_list);
+        setTimeout(function(){
+            self.update_proxy_status(proxy_list);
+        }, 1000);
+
         setInterval(function(){
             self.update_proxy_status(proxy_list);
         }, 1000 * 60 * Math.random() * 10);
-    }
+    };
+
     self.start = function(pacPort){
       var server = http.createServer();
       server.on('request', self.response_handler);
