@@ -36,7 +36,7 @@ var PacApp = function(){
           status.updating = true;
           proxyChecker.check_proxy(proxy, {url: "http://www.ip138.com", regex: /ip/}, function(p, result, statusCode, elapsedTime){
               console.log("Proxy Status update: " + p + ": online = " + result + ' ping = '  + elapsedTime + 'ms');
-              proxy_status[p] = {online: result, ping: elapsedTime};
+              proxy_status[p] = {online: result, ping: elapsedTime, updated: new Date().toISOString() };
 
           });
       }
@@ -57,13 +57,18 @@ var PacApp = function(){
 
         if (client_request.url === '/update') {
             self.update_proxy_status(proxy_list);
-            client_response.end('<a href="/status"> Check Status </a>');
+            client_response.end('<a href="/proxies"> Check Status </a>');
             return;
         }
         if (client_request.url === '/status') {
 
             client_response.end('OK');
 
+            return;
+        }
+        if (client_request.url === "/proxies"){
+            client_response.write(JSON.stringify(proxy_status, null, 4));
+            client_response.end();
             return;
         }
         if (client_request.url === '/test.pac') {
