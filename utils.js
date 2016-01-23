@@ -17,6 +17,15 @@ function object_to_linq(obj){
     return new LINQ(result);
 };
 
+var toRegExp = function(str) {
+  str = String(str)
+    .replace(/\//g, '\\/')
+    .replace(/\./g, '\\.')
+    .replace(/\?/g, '\\?')
+    .replace(/\*/g, '(.*)');
+  return "(/^" + str + "$/)";
+}
+
 var generatePacContent = function(proxies, default_fallback){
   var result = "function FindProxyForURL(url, host) {\r\n";
   result += "  var proxy = \"";
@@ -28,7 +37,8 @@ var generatePacContent = function(proxies, default_fallback){
 
   result += onlineProxies + "\";\r\n";
   urls.filters.forEach(function(filter){
-    result += '  if(shExpMatch(url, "'+ filter  +'")){ return proxy;}\r\n';
+    // result += '  if(shExpMatch(url, "'+ filter  +'") || ' + toRegExp(filter) + '.test(url)){ return proxy;}\r\n';
+    result += '  if(' + toRegExp(filter) + '.test(url)){ return proxy;}\r\n';
   });
   if (default_fallback){
     result += '  return "' + default_fallback + '";\r\n}\r\n';
