@@ -5,6 +5,7 @@ var http = require('http');
 var utils = require('./utils.js');
 var PacProxyAgent = require('pac-proxy-agent');
 var proxyChecker = require('./proxychecker.js');
+require('./logpatch.js');
 
 
 var proxy_list = ['120.198.231.21:80', '120.198.231.23:80', '120.198.231.24:80'];
