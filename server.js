@@ -77,7 +77,7 @@ var AutoProxyApp = function() {
       }
       else {
         var pacApp = new pac.PacApp();
-        pacApp.start(self.port);
+        pacApp.start(self.ipaddress, self.port);
         pacApp.schedule_proxy_status_update();
       }
 

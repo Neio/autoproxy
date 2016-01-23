@@ -101,10 +101,10 @@ var PacApp = function(){
         }, 1000 * 60 * Math.random() * 10);
     };
 
-    self.start = function(pacPort){
+    self.start = function(pacIp, pacPort){
       var server = http.createServer();
       server.on('request', self.response_handler);
-      server.listen(pacPort, '0.0.0.0').on('error', function(err) {
+      server.listen(pacPort, pacIp).on('error', function(err) {
           if (err.code === 'EADDRINUSE') {
               console.error('[auto proxy] Port number is already in use! Exiting now...');
               process.exit();
