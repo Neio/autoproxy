@@ -96,20 +96,19 @@ var PacApp = function(){
             self.update_proxy_status(proxy_list);
         }, 1000 * 60 * Math.random() * 10);
     }
+    self.start = function(pacPort){
+      var server = http.createServer();
+      server.on('request', self.response_handler);
+      server.listen(pacPort, '0.0.0.0').on('error', function(err) {
+          if (err.code === 'EADDRINUSE') {
+              console.error('[auto proxy] Port number is already in use! Exiting now...');
+              process.exit();
+          }
+      });
+      console.log("Listening to port: " + pacPort);
+    };
 
-
-    self.start = function(pacPort, proxyPort){
-        var server = http.createServer();
-        server.on('request', self.response_handler);
-        server.listen(pacPort, '0.0.0.0').on('error', function(err) {
-            if (err.code === 'EADDRINUSE') {
-                console.error('[auto proxy] Port number is already in use! Exiting now...');
-                process.exit();
-            }
-        });
-        console.log("Listening to port: " + pacPort);
-
-
+    self.start_debug = function(pacPort, proxyPort){
         // URI to a PAC proxy file to use (the "pac+" prefix is stripped)
         var proxy = 'pac+http://127.0.0.1:' +pacPort +  '/proxy.pac';
         // create an instance of the `PacProxyAgent` class with the PAC file location
