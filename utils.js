@@ -26,27 +26,23 @@ var toRegExp = function(str) {
   return "(/^" + str + "$/)";
 }
 
-var generatePacContent = function(proxies, default_fallback){
-  var result = "function FindProxyForURL(url, host) {\r\n";
-  result += "  var proxy = \"";
-  var onlineProxies = object_to_linq(proxies)
-    .Where(function(p){ return p.online;})
-    .OrderBy(function(p){ return p.ping; })
-    .Select(function(p){ return "PROXY " + p.__key; })
-    .ToArray().join(";");
+var generatePacContent = function(proxies){
+    var result = "function FindProxyForURL(url, host) {\r\n";
+    result += "  var proxy = \"";
+    var options = new LINQ(proxies)
+        .Where(function(p){ return p.online;})
+        .OrderBy(function(p){ return p.ping; })
+        .Select(function(p){ return "PROXY " + p.name; })
+        .ToArray();
+    options.push("DIRECT");
 
-  result += onlineProxies + "\";\r\n";
-  urls.filters.forEach(function(filter){
-    // result += '  if(shExpMatch(url, "'+ filter  +'") || ' + toRegExp(filter) + '.test(url)){ return proxy;}\r\n';
-    result += '  if(' + toRegExp(filter) + '.test(url)){ return proxy;}\r\n';
-  });
-  if (default_fallback){
-    result += '  return "' + default_fallback + '";\r\n}\r\n';
-  }else{
+    result += options.join("; ") + "\";\r\n";
+    urls.filters.forEach(function(filter){
+        // result += '  if(shExpMatch(url, "'+ filter  +'") || ' + toRegExp(filter) + '.test(url)){ return proxy;}\r\n';
+        result += '  if(' + toRegExp(filter) + '.test(url)){ return proxy;}\r\n';
+    });
     result += '  return "DIRECT";\r\n}\r\n';
-  }
-
-  return result;
+    return result;
 }
 
 /*var check_if_in_filters = function(url){

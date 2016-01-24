@@ -19,8 +19,10 @@
     "npm": ">= 1.0.0"
   },
   "dependencies": {
+    "datejs": "^1.0.0-rc3",
     "linq": "^3.0.5",
     "log-prefix": "0.0.0",
+    "mongoose": "^4.3.6",
     "node-linq": "0.0.5",
     "pac-proxy-agent": "^1.0.0",
     "request": "^2.67.0",

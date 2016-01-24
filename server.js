@@ -26,7 +26,7 @@ var AutoProxyApp = function() {
         //  Set the environment variables we need.
         self.ipaddress = process.env.OPENSHIFT_NODEJS_IP;
         self.port      = process.env.OPENSHIFT_NODEJS_PORT || 8888;
-        self.enable_debug = false;
+        self.env       = process.env.NODE_ENV || "production";
         self.debug_port = 5050;
         if (typeof self.ipaddress === "undefined") {
             console.warn('No OPENSHIFT_NODEJS_IP var, using 0.0.0.0');
@@ -65,10 +65,10 @@ var AutoProxyApp = function() {
     };
 
     self.start = function(){
-      if (self.enable_debug){
+      if (self.env === "dev"){
           utils.respawnable_start(function(){
             var pacApp = new pac.PacApp();
-            pacApp.start(self.port);
+            pacApp.start(self.ipaddress,self.port);
 
             console.log("enabling debug...");
             pacApp.start_debug(self.port, self.debug_port);
@@ -76,6 +76,7 @@ var AutoProxyApp = function() {
           });
       }
       else {
+        // In production, http proxy feature is disabled.
         var pacApp = new pac.PacApp();
         pacApp.start(self.ipaddress, self.port);
         pacApp.schedule_proxy_status_update();
