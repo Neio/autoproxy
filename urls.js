@@ -178,8 +178,7 @@ filters = [
     'http://mqqplayer.3g.qq.com/*',
     'http://proxy.music.qq.com/*',
     'http://proxymc.qq.com/*',
-    //Disable follow url because its hijackable.
-    // 'http://*/base/fcgi-bin/getsession*',  //for ios qq music v5.8, issue #536
+    'http://*/base/fcgi-bin/getsession*',
     'http://ip2.kugou.com/check/isCn/*',
     'http://ip.kugou.com/check/isCn/*',
     'http://client.api.ttpod.com/global*',
