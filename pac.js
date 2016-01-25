@@ -103,22 +103,28 @@ var PacApp = function(){
                   client_request.headers['user-agent'].indexOf('PhantomJS') !== -1) {
                 content_type = 'text/plain';
             }
-            var live_content = "";
             if (db.connected){
               console.log('using db proxy data...');
               db.Proxy.find({online: true}, function(err, proxies){
-                  live_content = utils.pac_content_generator(proxies);
+                  var live_content = utils.pac_content_generator(proxies);
+                  client_response.writeHead(200, {
+                      'Content-Type': content_type,
+                      'Content-Length': live_content.length.toString(),
+                      'Cache-Control': 'public, max-age=60'
+                  });
+                  client_response.end( live_content);
               });
             }
             else{
-                live_content = utils.pac_content_generator(proxy_status);
+                var live_content = utils.pac_content_generator(proxy_status);
+                client_response.writeHead(200, {
+                    'Content-Type': content_type,
+                    'Content-Length': live_content.length.toString(),
+                    'Cache-Control': 'public, max-age=60'
+                });
+                client_response.end( live_content);
             }
-            client_response.writeHead(200, {
-                'Content-Type': content_type,
-                'Content-Length': live_content.length.toString(),
-                'Cache-Control': 'public, max-age=60'
-            });
-            client_response.end( live_content);
+
             return;
         }
         var requrl = url.parse(client_request.url, true);
