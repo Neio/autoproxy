@@ -10,7 +10,7 @@ require('datejs');
 
 require('./logpatch.js');
 
-
+var proxy_checker_param = {url: "http://www.ip138.com", regex: /ip/};
 var proxy_list_default = ['120.198.231.21:80', '120.198.231.23:80', '120.198.231.24:80'];
 
 var proxy_status = [];
@@ -29,7 +29,7 @@ var PacApp = function(){
 
     self.update_proxy_status = function(){
       console.log("update_proxy_status...");
-      db.Proxy.find({ updated: {$lt: new Date().addMinutes(-30)}}).sort({updated: 1}).limit(5, function(err, proxies){
+      db.Proxy.find({ updated: {$lt: new Date().addMinutes(-30)}}).sort({updated: 1}).limit(5).exec(function(err, proxies){
           if (err){
               console.log("Failed to get data.");
               return;
@@ -38,7 +38,7 @@ var PacApp = function(){
               var proxy = proxies[i];
               console.log( "checking proxy status :" + proxy.name);
 
-              proxyChecker.check_proxy(proxy.name, {url: "http://www.ip138.com", regex: /ip/}, function(p, result, statusCode, elapsedTime){
+              proxyChecker.check_proxy(proxy.name, proxy_checker_param, function(p, result, statusCode, elapsedTime){
                   console.log("Proxy Status update: " + p + ": online = " + result + ' ping = '  + elapsedTime + 'ms');
                   proxy.online = result;
                   proxy.updated = new Date();
@@ -76,36 +76,28 @@ var PacApp = function(){
             return;
         }
         if (client_request.url === "/proxies"){
-            db.Proxy.find({}, function(err, proxies){
+            db.Proxy.find({}).sort({ping: 1}).exec(function(err, proxies){
                 client_response.write(JSON.stringify(proxies, null, 4));
                 client_response.end();
             });
 
             return;
         }
-        if (client_request.url === '/test.pac') {
-            if (db.connected){
-              console.log('using db proxy data...');
-              db.Proxy.find({online: true}, function(err, proxies){
-                  var live_content = utils.pac_content_generator(proxies);
-                  client_response.end(live_content);
-              });
-            }
-            else{
-                var live_content = utils.pac_content_generator(proxy_status);
-                client_response.end(live_content);
-            }
-            return;
-        }
-        if (client_request.url === '/proxy.pac') {
+        var requrl = url.parse(client_request.url, true);
+        if (requrl.pathname === "/proxy.pac"){
             var content_type = 'application/x-ns-proxy-autoconfig';
-            if (client_request.headers['user-agent'] !== undefined &&
+            if (requrl.query.debug || client_request.headers['user-agent'] !== undefined &&
                   client_request.headers['user-agent'].indexOf('PhantomJS') !== -1) {
                 content_type = 'text/plain';
             }
             if (db.connected){
               console.log('using db proxy data...');
-              db.Proxy.find({online: true}, function(err, proxies){
+              db.Proxy.find({online: true}).sort({ping: 1}).limit(3).exec( function(err, proxies){
+                  if (err){
+                      console.log("Error: " + err);
+                      client_response.end("ERROR");
+                      return;
+                  }
                   var live_content = utils.pac_content_generator(proxies);
                   client_response.writeHead(200, {
                       'Content-Type': content_type,
@@ -124,10 +116,9 @@ var PacApp = function(){
                 });
                 client_response.end( live_content);
             }
-
             return;
         }
-        var requrl = url.parse(client_request.url, true);
+
         if (requrl.pathname === "/addproxy" && requrl.query.proxy){
             console.log('Adding proxy : ' + requrl.query.proxy);
             db.Proxy.findOne({name: requrl.query.proxy}, function(err, proxy){
@@ -142,7 +133,7 @@ var PacApp = function(){
                     return ;
                 }
                 console.log("Checking proxy status for " + requrl.query.proxy);
-                proxyChecker.check_proxy(requrl.query.proxy, {url: "http://www.ip138.com", regex: /ip/}, function(p, result, statusCode, elapsedTime){
+                proxyChecker.check_proxy(requrl.query.proxy, proxy_checker_param, function(p, result, statusCode, elapsedTime){
                     console.log("Proxy Status confirmed: " + p + ": online = " + result + ' ping = '  + elapsedTime + 'ms');
                     var proxy = new db.Proxy();
                     proxy.name = requrl.query.proxy;
@@ -152,7 +143,7 @@ var PacApp = function(){
                     proxy.updatedDisplayInfo = new Date().toISOString();
                     proxy.ping = elapsedTime;
                     proxy.save();
-                    client_response.end("Added");
+                    client_response.end("Proxy "  + requrl.query.proxy + "Added");
                 });
 
 

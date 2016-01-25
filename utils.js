@@ -30,7 +30,6 @@ var generatePacContent = function(proxies){
     var result = "function FindProxyForURL(url, host) {\r\n";
     result += "  var proxy = \"";
     var options = new LINQ(proxies)
-        .Where(function(p){ return p.online;})
         .OrderBy(function(p){ return p.ping; })
         .Select(function(p){ return "PROXY " + p.name; })
         .ToArray();
