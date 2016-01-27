@@ -28,6 +28,11 @@ filters = [
     'http://cache.video.qiyi.com/vps?*',
     'http://cache.video.qiyi.com/liven/*',
     'http://v.api.hunantv.com/player/video*',
+    'http://bangumi.bilibili.com/api/*',
+    'http://app.bilibili.com/bangumi/user_season_status?*',
+    'http://m*.music.126.net/*',
+    'http://api.appsdk.soku.com/u/s?keyword=*',
+    'http://api.appsdk.soku.com/d/s?keyword=*',
 
     // cause oversea servers unusable?
     // 'http://interface.bilibili.tv/player*',
@@ -128,6 +133,9 @@ filters = [
     'http://211.151.157.15/*',
 
     // for Mobile apps    // Video apps
+    'http://v.youku.com/v_show/*',
+    'http://www.youku.com/show_page/*',
+    'http://www.soku.com/search_video/*',
     'http://a.play.api.3g.youku.com/common/v3/play?*',
     'http://i.play.api.3g.youku.com/common/v3/play?*',
     'http://i.play.api.3g.youku.com/common/v3/hasadv/play?*',
@@ -151,6 +159,8 @@ filters = [
     'http://iface2.iqiyi.com/php/xyz/iface/*',
     'http://iface2.iqiyi.com/php/xyz/entry/galaxy.php?*',
     'http://iface2.iqiyi.com/php/xyz/entry/nebula.php?*',
+    "http://iface.iqiyi.com/api/ip2area*",
+    "http://pdata.video.qiyi.com/k*",
     'http://cache.m.iqiyi.com/jp/tmts/*',
     'http://dynamic.app.m.letv.com/*/dynamic.php?*ctl=videofile*',
     'http://dynamic.meizi.app.m.letv.com/*/dynamic.php?*ctl=videofile*',
@@ -179,6 +189,7 @@ filters = [
     'http://proxy.music.qq.com/*',
     'http://proxymc.qq.com/*',
     'http://*/base/fcgi-bin/getsession*',
+    'http://acc.music.qq.com/base/fcgi-bin/getsession*',
     'http://ip2.kugou.com/check/isCn/*',
     'http://ip.kugou.com/check/isCn/*',
     'http://client.api.ttpod.com/global*',
@@ -197,8 +208,9 @@ filters = [
     'http://spark.api.xiami.com/api?*method=Songs.getTrackDetail*',
     'http://spark.api.xiami.com/api?*method=Songs.detail*',
     'http://spark.api.xiami.com/api?*method=mobile.start-init*',
+    'http://spark.api.xiami.com/api?*',
     // for PC Clients only
-    'http://iplocation.geo.qiyi.com/cityjson',
+    'http://iplocation.geo.qiyi.com/cityjson*',
     'http://sns.video.qq.com/tunnel/fcgi-bin/tunnel*',
     'http://v5.pc.duomi.com/single-ajaxsingle-isban*',
 
