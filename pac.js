@@ -191,6 +191,7 @@ var PacApp = function(){
             // utils.check_if_in_filters(req.url)
             var endpoint = req.url;
             console.log('REQUEST: [%j] %j', req.method, endpoint);
+            console.log('REQUEST HEADERS: ' + JSON.stringify(req.headers));
             var opts = url.parse(endpoint);
             opts.agent = agent;
             opts.headers = req.headers;
@@ -211,6 +212,47 @@ var PacApp = function(){
             });
 
             req.pipe(requestProxy);
+        });
+
+        var regex_hostport = /^([^:]+)(:([0-9]+))?$/;
+        server.addListener('connect', function(req, socket, bodyhead){
+            console.log("Proxying HTTPS request for:", req.url);
+            var pair = [req.url, 443];
+            if (req.url.indexOf(':') > 0){
+                pairs = req.url.split(':');
+            }
+
+            var proxySocket = new net.Socket();
+            proxySocket.connect(pairs[1], pairs[0], function () {
+                proxySocket.write(bodyhead);
+                socket.write("HTTP/" + req.httpVersion + " 200 Connection established\r\n\r\n");
+              }
+            );
+
+            proxySocket.on('data', function (chunk) {
+              socket.write(chunk);
+            });
+
+            proxySocket.on('end', function () {
+              socket.end();
+            });
+
+            proxySocket.on('error', function () {
+              socket.write("HTTP/" + req.httpVersion + " 500 Connection error\r\n\r\n");
+              socket.end();
+            });
+
+            socket.on('data', function (chunk) {
+              proxySocket.write(chunk);
+            });
+
+            socket.on('end', function () {
+              proxySocket.end();
+            });
+
+            socket.on('error', function () {
+              proxySocket.end();
+            });
         });
 
         server.listen(proxyPort);
