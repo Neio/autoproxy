@@ -11,16 +11,6 @@ require('datejs');
 require('./logpatch.js');
 
 var proxy_checker_param = {url: "http://www.ip138.com", regex: /ip/};
-var proxy_list_default = ['120.198.231.21:80', '120.198.231.23:80', '120.198.231.24:80'];
-
-var proxy_status = [];
-
-for (i in proxy_list_default){
-    var proxy = proxy_list_default[i];
-    // bootstrap: by default, set all proxies as online and ping as 1000ms
-    proxy_status.push( {name: proxy, online: true, ping: 1000} );
-}
-
 
 var PacApp = function(){
 
@@ -108,13 +98,8 @@ var PacApp = function(){
               });
             }
             else{
-                var live_content = utils.pac_content_generator(proxy_status);
-                client_response.writeHead(200, {
-                    'Content-Type': content_type,
-                    'Content-Length': live_content.length.toString(),
-                    'Cache-Control': 'public, max-age=60'
-                });
-                client_response.end( live_content);
+                client_response.write("HTTP/" + client_request.httpVersion + " 500 Connection error\r\n\r\n");
+                client_response.end();
             }
             return;
         }
