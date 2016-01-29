@@ -3,7 +3,6 @@ var url = require('url');
 var util = require('util');
 var http = require('http');
 var utils = require('./utils.js');
-var PacProxyAgent = require('pac-proxy-agent');
 var proxyChecker = require('./proxychecker.js');
 var db = require('./db.js');
 require('datejs');
@@ -170,85 +169,6 @@ var PacApp = function(){
       });
       console.log("Listening to port: " + pacPort);
     };
-
-    self.start_debug = function(pacPort, proxyPort){
-        // URI to a PAC proxy file to use (the "pac+" prefix is stripped)
-        var proxy = 'pac+http://127.0.0.1:' +pacPort +  '/proxy.pac';
-        // create an instance of the `PacProxyAgent` class with the PAC file location
-        var agent = new PacProxyAgent(proxy);
-        console.log('using PAC proxy proxy file at %j', proxy);
-
-        var server = http.createServer(function(req, resp) {
-
-            // utils.check_if_in_filters(req.url)
-            var endpoint = req.url;
-            console.log('REQUEST: [%j] %j', req.method, endpoint);
-            console.log('REQUEST HEADERS: ' + JSON.stringify(req.headers));
-            var opts = url.parse(endpoint);
-            opts.agent = agent;
-            opts.headers = req.headers;
-            opts.method = req.method;
-
-            var requestProxy = http.request(opts, function (res){
-                /*if (res.headers['content-type'] && res.headers['content-type'].indexOf('application/json') != -1)
-                {
-                    res.on('data', function (chunk)  {
-                      console.log('==============\r\n$%j\r\n JSON RESPONSE BODY for: \r\n%j \r\n=====================', endpoint, chunk);
-                    });
-                }*/
-                resp.statusCode = res.statusCode;
-                for(name in res.headers){
-                   resp.setHeader(name, res.headers[name]);
-                }
-                res.pipe(resp);
-            });
-
-            req.pipe(requestProxy);
-        });
-
-        var regex_hostport = /^([^:]+)(:([0-9]+))?$/;
-        server.addListener('connect', function(req, socket, bodyhead){
-            console.log("Proxying HTTPS request for:", req.url);
-            var pair = [req.url, 443];
-            if (req.url.indexOf(':') > 0){
-                pairs = req.url.split(':');
-            }
-
-            var proxySocket = new net.Socket();
-            proxySocket.connect(pairs[1], pairs[0], function () {
-                proxySocket.write(bodyhead);
-                socket.write("HTTP/" + req.httpVersion + " 200 Connection established\r\n\r\n");
-              }
-            );
-
-            proxySocket.on('data', function (chunk) {
-              socket.write(chunk);
-            });
-
-            proxySocket.on('end', function () {
-              socket.end();
-            });
-
-            proxySocket.on('error', function () {
-              socket.write("HTTP/" + req.httpVersion + " 500 Connection error\r\n\r\n");
-              socket.end();
-            });
-
-            socket.on('data', function (chunk) {
-              proxySocket.write(chunk);
-            });
-
-            socket.on('end', function () {
-              proxySocket.end();
-            });
-
-            socket.on('error', function () {
-              proxySocket.end();
-            });
-        });
-
-        server.listen(proxyPort);
-    }
 }
 
 
