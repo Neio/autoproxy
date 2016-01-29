@@ -28,13 +28,20 @@ var PacApp = function(){
               var proxy = proxies[i];
               console.log( "checking proxy status :" + proxy.name);
 
-              proxyChecker.check_proxy(proxy.name, proxy_checker_param, function(p, result, statusCode, elapsedTime){
-                  console.log("Proxy Status update: " + p + ": online = " + result + ' ping = '  + elapsedTime + 'ms');
+              proxyChecker.check_proxy(proxy.name, proxy_checker_param, function(p, result, statusCode, elapsedTime, err){
+                  if (err){
+                      console.log("Proxy Status update: " + p + ": online = " + result + ' Error: '  + err);
+                  }
+                  else{
+                      console.log("Proxy Status update: " + p + ": online = " + result + ' ping = '  + elapsedTime + 'ms');
+                  }
+
                   proxy.online = result;
                   proxy.updated = new Date();
                   proxy.updatedDisplayInfo = new Date().toISOString();
                   proxy.ping = elapsedTime;
                   proxy.save();
+
 
               });
           }
