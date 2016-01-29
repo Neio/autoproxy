@@ -3,18 +3,27 @@ var url = require('url');
 var util = require('util');
 var http = require('http');
 var utils = require('./utils.js');
+var request = require('request');
 var proxyChecker = require('./proxychecker.js');
 var db = require('./db.js');
 require('datejs');
-
 require('./logpatch.js');
 
+var remote_filter_url = process.env.REMOTE_FILTER_URL || 'https://gist.githubusercontent.com/Neio/73e038f6129d07b2cb54/raw/urls.js';
 var proxy_checker_param = {url: "http://www.ip138.com", regex: /ip/};
 
 var PacApp = function(){
 
       //  Scope.
     var self = this;
+
+    self.update_filter = function(){
+      request(remote_filter_url, function (error, response, body) {
+        if (!error && response.statusCode == 200) {
+            console.log(body);
+        }
+      });
+    };
 
     self.update_proxy_status = function(){
       console.log("update_proxy_status...");
@@ -155,7 +164,7 @@ var PacApp = function(){
         setTimeout(function(){ self.update_proxy_status(); }, 1000);
         setInterval(function(){
             self.update_proxy_status();
-        }, 1000 * 60 * (Math.random() + 1));
+        }, 1000 * 60 * (Math.random() * 5 + 5));
     };
 
     self.start = function(pacIp, pacPort){
