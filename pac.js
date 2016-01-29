@@ -50,25 +50,27 @@ var PacApp = function(){
               return;
           }
           for(var i = 0; i < proxies.length; i++){
-              var proxy = proxies[i];
-              console.log( "checking proxy status :" + proxy.name);
 
-              proxyChecker.check_proxy(proxy.name, proxy_checker_param, function(p, result, statusCode, elapsedTime, err){
-                  if (err){
-                      console.log("Proxy Status update: " + p + ": online = " + result + ' Error: '  + err);
-                  }
-                  else{
-                      console.log("Proxy Status update: " + p + ": online = " + result + ' ping = '  + elapsedTime + 'ms');
-                  }
+              (function(proxy){
+                  console.log( "checking proxy status :" + proxy.name);
+                  proxyChecker.check_proxy(proxy.name, proxy_checker_param, function(result, statusCode, elapsedTime, err){
+                      if (err){
+                          console.log("Proxy Status update: " + proxy.name + ": online = " + result + ' Error: '  + err);
+                      }
+                      else{
+                          console.log("Proxy Status update: " + proxy.name + ": online = " + result + ' ping = '  + elapsedTime + 'ms');
+                      }
 
-                  proxy.online = result;
-                  proxy.updated = new Date();
-                  proxy.updatedDisplayInfo = new Date().toISOString();
-                  proxy.ping = elapsedTime;
-                  proxy.save();
+                      proxy.online = result;
+                      proxy.updated = new Date();
+                      proxy.updatedDisplayInfo = new Date().toISOString();
+                      proxy.ping = elapsedTime;
+                      console.log(proxy);
+                      proxy.save();
 
 
-              });
+                  });
+              })(proxies[i]);
           }
       });
     }
@@ -160,7 +162,10 @@ var PacApp = function(){
                     proxy.type = "HTTP";
                     proxy.updatedDisplayInfo = new Date().toISOString();
                     proxy.ping = elapsedTime;
-                    proxy.save();
+                    proxy.save(function (err, result) {
+                          if (err) return console.error(err);
+                         console.log(result);
+                      });
                     client_response.end("Proxy "  + requrl.query.proxy + "Added");
                 });
 
@@ -183,7 +188,7 @@ var PacApp = function(){
         setTimeout(function(){ self.update_proxy_status(); }, 1000);
         setInterval(function(){
             self.update_proxy_status();
-        }, 1000 * 60 * (Math.random() * 5 + 5));
+        }, 1000 * 60 * (Math.random() * 1 + 1));
 
         // Filters would be auto checked every 5 minutes
         setTimeout(function(){ self.update_filter(); }, 100);

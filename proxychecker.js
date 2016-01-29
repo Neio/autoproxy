@@ -11,13 +11,13 @@ var checkProxy = function(proxy, options, callback) {
     var requestOption = { url: options.url, time: true};
     proxyRequest(requestOption, function(err, res) {
         if( err ) {
-            callback(proxy, false, 500, -1, err);
+            callback(false, 500, -1, err);
         } else if( res.statusCode != 200 ) {
-            callback(proxy, false, res.statusCode, -1 ,err);
+            callback(false, res.statusCode, -1 ,err);
         } else if( !res.body || (options.regex && !options.regex.exec(res.body)) ) {
-            callback(proxy, false, res.statusCode, -1, "Body doesn't match the regex " + options.regex + ".");
+            callback(false, res.statusCode, -1, "Body doesn't match the regex " + options.regex + ".");
         } else {
-            callback(proxy, true, res.statusCode, res.elapsedTime);
+            callback(true, res.statusCode, res.elapsedTime);
         }
     });
 }
