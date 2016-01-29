@@ -68,14 +68,13 @@ var AutoProxyApp = function() {
           utils.respawnable_start(function(){
             var pacApp = new pac.PacApp();
             pacApp.start(self.ipaddress,self.port);
-            pacApp.schedule_proxy_status_update();
           });
       }
       else {
         // In production, http proxy feature is disabled.
         var pacApp = new pac.PacApp();
         pacApp.start(self.ipaddress, self.port);
-        pacApp.schedule_proxy_status_update();
+
       }
 
     }

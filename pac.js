@@ -6,11 +6,13 @@ var utils = require('./utils.js');
 var request = require('request');
 var proxyChecker = require('./proxychecker.js');
 var db = require('./db.js');
+var minify = require('./minify.js');
 require('datejs');
 require('./logpatch.js');
 
 var remote_filter_url = process.env.REMOTE_FILTER_URL || 'https://gist.githubusercontent.com/Neio/73e038f6129d07b2cb54/raw/urls.js';
 var proxy_checker_param = {url: "http://www.ip138.com", regex: /ip/};
+var filters = [];
 
 var PacApp = function(){
 
@@ -18,9 +20,24 @@ var PacApp = function(){
     var self = this;
 
     self.update_filter = function(){
+      console.log("updating filters...");
       request(remote_filter_url, function (error, response, body) {
         if (!error && response.statusCode == 200) {
-            console.log(body);
+            var result = JSON.parse(minify(body));
+            console.log("updated with: ");
+            console.log(result);
+            if(result.filters){
+                filters = result.filters;
+            }
+            else{
+                console.log("Failed to get filters, please verify the content of " + remote_filter_url);
+            }
+        }
+        else if (error){
+            console.log("Error occurred when updating filter. Error: " + error);
+        }
+        else{
+            console.log("rror occurred when updating filter. Status Code: " + response.statusCode)
         }
       });
     };
@@ -71,7 +88,8 @@ var PacApp = function(){
 
         if (client_request.url === '/update') {
             self.update_proxy_status();
-            var result = '<a href="/proxies"> Check Status </a>';
+            self.update_filter();
+            var result = 'Update is triggerred';
             client_response.writeHead(200, {
                 'Content-Type': 'text/html',
                 'Content-Length': result.length,
@@ -103,13 +121,13 @@ var PacApp = function(){
                       client_response.end("ERROR");
                       return;
                   }
-                  var live_content = utils.pac_content_generator(proxies);
+                  var live_content = utils.pac_content_generator(proxies, filters);
                   client_response.writeHead(200, {
                       'Content-Type': content_type,
                       'Content-Length': live_content.length.toString(),
                       'Cache-Control': 'public, max-age=60'
                   });
-                  client_response.end( live_content);
+                  client_response.end(live_content);
               });
             }
             else{
@@ -159,12 +177,19 @@ var PacApp = function(){
     }
 
 
-    self.schedule_proxy_status_update = function(){
+    self.schedule_tasks = function(){
+
 
         setTimeout(function(){ self.update_proxy_status(); }, 1000);
         setInterval(function(){
             self.update_proxy_status();
         }, 1000 * 60 * (Math.random() * 5 + 5));
+
+        // Filters would be auto checked every 5 minutes
+        setTimeout(function(){ self.update_filter(); }, 100);
+        setInterval(function(){
+            self.update_filter();
+        }, 1000 * 60 * 5);
     };
 
     self.start = function(pacIp, pacPort){
@@ -177,6 +202,7 @@ var PacApp = function(){
           }
       });
       console.log("Listening to port: " + pacPort);
+      self.schedule_tasks();
     };
 }
 

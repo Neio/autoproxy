@@ -1,4 +1,3 @@
-var urls = require('./urls.js');
 var net = require('net');
 var url = require('url');
 var util = require('util');
@@ -26,7 +25,7 @@ var toRegExp = function(str) {
   return "(/^" + str + "$/)";
 }
 
-var generatePacContent = function(proxies){
+var generatePacContent = function(proxies, filters){
     var result = "function FindProxyForURL(url, host) {\r\n";
     result += "  var proxy = \"";
     var options = new LINQ(proxies)
@@ -36,7 +35,7 @@ var generatePacContent = function(proxies){
     options.push("DIRECT");
 
     result += options.join("; ") + "\";\r\n";
-    urls.filters.forEach(function(filter){
+    filters.forEach(function(filter){
         // result += '  if(shExpMatch(url, "'+ filter  +'") || ' + toRegExp(filter) + '.test(url)){ return proxy;}\r\n';
         result += '  if(' + toRegExp(filter) + '.test(url)){ return proxy;}\r\n';
     });
