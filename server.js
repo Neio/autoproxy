@@ -41,11 +41,11 @@ var AutoProxyApp = function() {
      */
     self.terminator = function(sig){
         if (typeof sig === "string") {
-           console.log('%s: Received %s - terminating the app ...',
+           console.info('%s: Received %s - terminating the app ...',
                        Date(Date.now()), sig);
            process.exit(1);
         }
-        console.log('%s: Node server stopped.', Date(Date.now()) );
+        console.info('%s: Node server stopped.', Date(Date.now()) );
     };
 
 
@@ -80,7 +80,7 @@ var AutoProxyApp = function() {
     }
 
     self.initialize = function() {
-        console.log('bootstrap app');
+        console.info('bootstrap app');
         self.setupVariables();
         self.setupTerminationHandlers();
     };

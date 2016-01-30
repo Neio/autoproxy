@@ -1,6 +1,5 @@
 
 var fs = require('fs');
-var stream = require('stream');
 var request = require('request');
 
 

@@ -6,16 +6,6 @@ var cluster = require('cluster');
 //var globToRegExp = require('glob-to-regexp');
 var LINQ = require("node-linq").LINQ;
 
-function object_to_linq(obj){
-    var result = [];
-    for(k in obj){
-        var target = obj[k];
-        target.__key = k;
-        result.push(target);
-    }
-    return new LINQ(result);
-};
-
 var toRegExp = function(str) {
   str = String(str)
     .replace(/\//g, '\\/')
@@ -66,12 +56,12 @@ var respawnable_start = function(start_func){
       }
 
       cluster.on('listening', function(worker, addr_port) {
-        console.log('Worker ' + worker.process.pid  + ' is now connected to ' + addr_port.address + ':' + addr_port.port);
+        console.info('Worker ' + worker.process.pid  + ' is now connected to ' + addr_port.address + ':' + addr_port.port);
       });
 
       cluster.on('exit', function(worker, code, signal) {
           if (signal) {
-              console.log('Worker ' + worker.process.pid + ' was killed by signal: ' + signal);
+              console.info('Worker ' + worker.process.pid + ' was killed by signal: ' + signal);
           } else if (code !== 0) {
               console.error('Worker ' + worker.process.pid + ' exited with error code: ' + code);
               // respawn a worker process when one dies

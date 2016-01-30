@@ -6,7 +6,7 @@ var db = mongodb.connection;
 db.on('error', console.error.bind(console, 'connection error:'));
 db.once('open', function() {
     // we're connected!
-    console.log('connected to mongodb.');
+    console.info('connected to mongodb.');
     exports.connected = true;
 });
 

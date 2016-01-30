@@ -20,52 +20,52 @@ var PacApp = function(){
     var self = this;
 
     self.update_filter = function(){
-      console.log("updating filters...");
+      console.info("updating filters...");
       request(remote_filter_url, function (error, response, body) {
         if (!error && response.statusCode == 200) {
             var result = JSON.parse(minify(body));
-            console.log("updated with: ");
-            console.log(result);
+            console.info("updated with: ");
+            console.info(result);
             if(result.filters){
                 filters = result.filters;
             }
             else{
-                console.log("Failed to get filters, please verify the content of " + remote_filter_url);
+                console.warn("Failed to get filters, please verify the content of " + remote_filter_url);
             }
         }
         else if (error){
-            console.log("Error occurred when updating filter. Error: " + error);
+            console.warn("Error occurred when updating filter. Error: " + error);
         }
         else{
-            console.log("rror occurred when updating filter. Status Code: " + response.statusCode)
+            console.warn("rror occurred when updating filter. Status Code: " + response.statusCode)
         }
       });
     };
 
     self.update_proxy_status = function(){
-      console.log("update_proxy_status...");
+      console.info("update_proxy_status...");
       db.Proxy.find({ updated: {$lt: new Date().addMinutes(-30)}}).sort({updated: 1}).limit(5).exec(function(err, proxies){
           if (err){
-              console.log("Failed to get data.");
+              console.warn("Failed to get data.");
               return;
           }
           for(var i = 0; i < proxies.length; i++){
 
               (function(proxy){
-                  console.log( "checking proxy status :" + proxy.name);
+                  console.info( "checking proxy status :" + proxy.name);
                   proxyChecker.check_proxy(proxy.name, proxy_checker_param, function(result, statusCode, elapsedTime, err){
                       if (err){
-                          console.log("Proxy Status update: " + proxy.name + ": online = " + result + ' Error: '  + err);
+                          console.warn("Proxy Status update: " + proxy.name + ": online = " + result + ' Error: '  + err);
                       }
                       else{
-                          console.log("Proxy Status update: " + proxy.name + ": online = " + result + ' ping = '  + elapsedTime + 'ms');
+                          console.info("Proxy Status update: " + proxy.name + ": online = " + result + ' ping = '  + elapsedTime + 'ms');
                       }
 
                       proxy.online = result;
                       proxy.updated = new Date();
                       proxy.updatedDisplayInfo = new Date().toISOString();
                       proxy.ping = elapsedTime;
-                      console.log(proxy);
+                      console.info(proxy);
                       proxy.save();
 
 
@@ -76,7 +76,7 @@ var PacApp = function(){
     }
 
     self.response_handler = function(client_request, client_response) {
-        console.log(client_request.url);
+        console.info(client_request.url);
         if (client_request.url === '/crossdomain.xml') {
             client_response.writeHead(200, {
                 'Content-Type': 'text/xml',
@@ -116,10 +116,10 @@ var PacApp = function(){
                 content_type = 'text/plain';
             }
             if (db.connected){
-              console.log('using db proxy data...');
+              console.info('using db proxy data...');
               db.Proxy.find({online: true}).sort({ping: 1}).limit(3).exec( function(err, proxies){
                   if (err){
-                      console.log("Error: " + err);
+                      console.info("Error: " + err);
                       client_response.end("ERROR");
                       return;
                   }
@@ -140,21 +140,21 @@ var PacApp = function(){
         }
 
         if (requrl.pathname === "/addproxy" && requrl.query.proxy){
-            console.log('Adding proxy : ' + requrl.query.proxy);
+            console.info('Adding proxy : ' + requrl.query.proxy);
             db.Proxy.findOne({name: requrl.query.proxy}, function(err, proxy){
                 if (err){
-                    console.log("Error occurred when checking if proxy exists.");
+                    console.info("Error occurred when checking if proxy exists.");
                     client_response.end("Connection failed");
                     return;
                 }
                 if (proxy){
-                    console.log("Proxy is already exists");
+                    console.info("Proxy is already exists");
                     client_response.end("Proxy is already exists");
                     return ;
                 }
-                console.log("Checking proxy status for " + requrl.query.proxy);
+                console.info("Checking proxy status for " + requrl.query.proxy);
                 proxyChecker.check_proxy(requrl.query.proxy, proxy_checker_param, function(p, result, statusCode, elapsedTime){
-                    console.log("Proxy Status confirmed: " + p + ": online = " + result + ' ping = '  + elapsedTime + 'ms');
+                    console.info("Proxy Status confirmed: " + p + ": online = " + result + ' ping = '  + elapsedTime + 'ms');
                     var proxy = new db.Proxy();
                     proxy.name = requrl.query.proxy;
                     proxy.online = result;
@@ -164,7 +164,7 @@ var PacApp = function(){
                     proxy.ping = elapsedTime;
                     proxy.save(function (err, result) {
                           if (err) return console.error(err);
-                         console.log(result);
+                         console.info(result);
                       });
                     client_response.end("Proxy "  + requrl.query.proxy + "Added");
                 });
@@ -176,7 +176,7 @@ var PacApp = function(){
             return;
         }
 
-        console.log("Cannot response to: " +client_request.url);
+        console.info("Cannot response to: " +client_request.url);
         client_response.end('OK');
 
     }
@@ -206,7 +206,7 @@ var PacApp = function(){
               process.exit();
           }
       });
-      console.log("Listening to port: " + pacPort);
+      console.info("Listening to port: " + pacPort);
       self.schedule_tasks();
     };
 }
