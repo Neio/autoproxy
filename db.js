@@ -16,7 +16,8 @@ var proxySchema = mongodb.Schema({
     ping: Number,
     type: String,
     updatedDisplayInfo: String,
-    updated: Date
+    updated: Date,
+    lastLive: Date
 });
 
 var Proxy = mongodb.model('Proxy', proxySchema);
