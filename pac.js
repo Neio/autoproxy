@@ -3,6 +3,7 @@ var url = require('url');
 var util = require('util');
 var http = require('http');
 var utils = require('./utils.js');
+var dataSource = require('./data.js');
 var request = require('request');
 var proxyChecker = require('./proxychecker.js');
 var db = require('./db.js');
@@ -11,6 +12,8 @@ require('datejs');
 require('./logpatch.js');
 
 var remote_filter_url = process.env.REMOTE_FILTER_URL || 'https://gist.githubusercontent.com/Neio/73e038f6129d07b2cb54/raw/urls.js';
+var data_tran_url = process.env.DATA_TRAN_URL;
+var data_source_url = process.env.DATA_SOURCE_URL;
 var proxy_checker_param = {
     url: "http://www.ip138.com",
     regex: /ip/
@@ -28,6 +31,83 @@ var PacApp = function() {
 
     //  Scope.
     var self = this;
+
+    self.update_from_source = function() {
+        if (!data_source_url) {
+            console.log("Data source url is empty");
+            return;
+        }
+        if (!data_tran_url) {
+            console.log("Data transformation url is empty");
+            return;
+        }
+        request(data_tran_url, function(error, response, body) {
+            if (!error && response.statusCode == 200) {
+                dataSource.getData(data_source_url, body, function(err, rt) {
+                    if (err) {
+                        console.log("Error occurred when getting data source from url " + data_source_url);
+                        console.log(err);
+                    } else {
+                        console.log("Got transformed data:");
+                        console.log(rt);
+                        var newData = JSON.parse(rt + " ");
+                        console.log(newData);
+                        newData.forEach(function(entry) {
+                            if (entry) {
+                                self.add_proxy(entry, function(msg){
+                                   console.log(msg);
+                                });
+                            }
+                        });
+                    }
+                });
+            } else if (error) {
+                console.warn("Error occurred when updating data tran. Error: " + error);
+            } else {
+                console.warn("rror occurred when updating data tran. Status Code: " + response.statusCode)
+            }
+        });
+
+    };
+
+    self.add_proxy = function(requestedProxy, callback) {
+        db.Proxy.findOne({
+            name: requestedProxy
+        }, function(err, proxy) {
+            if (err) {
+                console.info("Error occurred when checking if proxy exists.");
+                callback("Connection failed");
+                return;
+            }
+            if (proxy) {
+                console.info("Proxy " + requestedProxy + " is already exists");
+                callback("Proxy is already exists");
+                return;
+            }
+            console.info("Checking proxy status for " + requestedProxy);
+            proxyChecker.check_proxy(requestedProxy, proxy_checker_param, function(result, statusCode, elapsedTime) {
+                console.info("Proxy Status confirmed: " + requestedProxy + ": online = " + result + ' ping = ' + elapsedTime + 'ms');
+                if (result) {
+                    var proxy = new db.Proxy();
+                    proxy.name = requestedProxy;
+                    proxy.online = result;
+                    proxy.updated = new Date();
+                    proxy.type = "HTTP";
+                    proxy.updatedDisplayInfo = new Date().toISOString();
+                    proxy.ping = elapsedTime;
+                    proxy.lastLive = new Date();
+                    proxy.save(function(err, result) {
+                        if (err) return console.error(err);
+                        console.info(result);
+                    });
+                    callback("Proxy " + requestedProxy+ " is successfully added and alive.");
+                } else {
+                    callback("Proxy " + requestedProxy + " is offline and would not be added.");
+                }
+            });
+
+        });
+    }
 
     self.update_filter = function() {
         console.info("updating filters...");
@@ -106,6 +186,7 @@ var PacApp = function() {
         if (client_request.url === '/update') {
             self.update_proxy_status();
             self.update_filter();
+            self.update_from_source();
             var result = 'Update is triggerred';
             client_response.writeHead(200, {
                 'Content-Type': 'text/html',
@@ -125,6 +206,7 @@ var PacApp = function() {
 
             return;
         }
+
         var requrl = url.parse(client_request.url, true);
         if (requrl.pathname === "/proxy.pac") {
             var content_type = 'application/x-ns-proxy-autoconfig';
@@ -161,41 +243,8 @@ var PacApp = function() {
 
         if (requrl.pathname === "/addproxy" && requrl.query.proxy) {
             console.info('Adding proxy : ' + requrl.query.proxy);
-            db.Proxy.findOne({
-                name: requrl.query.proxy
-            }, function(err, proxy) {
-                if (err) {
-                    console.info("Error occurred when checking if proxy exists.");
-                    client_response.end("Connection failed");
-                    return;
-                }
-                if (proxy) {
-                    console.info("Proxy is already exists");
-                    client_response.end("Proxy is already exists");
-                    return;
-                }
-                console.info("Checking proxy status for " + requrl.query.proxy);
-                proxyChecker.check_proxy(requrl.query.proxy, proxy_checker_param, function(p, result, statusCode, elapsedTime) {
-                    console.info("Proxy Status confirmed: " + p + ": online = " + result + ' ping = ' + elapsedTime + 'ms');
-                    if (result) {
-                        var proxy = new db.Proxy();
-                        proxy.name = requrl.query.proxy;
-                        proxy.online = result;
-                        proxy.updated = new Date();
-                        proxy.type = "HTTP";
-                        proxy.updatedDisplayInfo = new Date().toISOString();
-                        proxy.ping = elapsedTime;
-                        proxy.lastLive = new Date();
-                        proxy.save(function(err, result) {
-                            if (err) return console.error(err);
-                            console.info(result);
-                        });
-                        client_response.end("Proxy " + requrl.query.proxy + " is successfully added and alive.");
-                    } else {
-                        client_response.end("Proxy " + requrl.query.proxy + " is offline and would not be added.");
-                    }
-                });
-
+            self.add_proxy(requrl.query.proxy, function(result) {
+                client_response.end(result);
             });
             return;
         }
