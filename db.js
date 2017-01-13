@@ -1,7 +1,5 @@
 var mongodb = require('mongoose');
-var mongodburl = process.env.OPENSHIFT_MONGODB_DB_URL || "mongodb://localhost/)"
-var mongodbName = process.env.OPENSHIFT_APP_NAME || 'proxy';
-mongodburl = mongodburl + mongodbName;
+var mongodburl = process.env.OPENSHIFT_MONGODB_DB_URL + process.env.OPENSHIFT_APP_NAME || process.env.MONGODB_URI|| "mongodb://localhost/proxy"
 console.log("Connecting to " + mongodburl);
 mongodb.connect(mongodburl);
 var db = mongodb.connection;
