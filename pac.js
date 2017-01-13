@@ -20,13 +20,6 @@ var proxy_checker_param = {
 };
 var filters = [];
 
-// TODO: Add proxy db update plugin url
-// Plugin API
-// <url>/list
-// Return:
-// [
-//   { proxy: "123.234.456.567:8080", quality: 100, tag: "abc"}
-// ]
 var PacApp = function() {
 
     //  Scope.
@@ -273,7 +266,9 @@ var PacApp = function() {
     self.start = function(pacIp, pacPort) {
         var server = http.createServer();
         server.on('request', self.response_handler);
-        server.listen(pacPort, pacIp).on('error', function(err) {
+        server.listen(pacPort, pacIp, function(){
+                console.log("Listening on " + pacIp + ", server_port " + pacPort);
+            }).on('error', function(err) {
             if (err.code === 'EADDRINUSE') {
                 console.error('[auto proxy] Port number is already in use! Exiting now...');
                 process.exit();
