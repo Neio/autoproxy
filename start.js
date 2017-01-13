@@ -1,96 +1,49 @@
 #!/bin/env node
 
-var fs      = require('fs');
-var http    = require('http');
-var pac     = require('./pac.js');
-var utils   = require('./utils.js');
-var url     = require('url');
+const cluster = require('cluster'),
+      stopSignals = [
+        'SIGHUP', 'SIGINT', 'SIGQUIT', 'SIGILL', 'SIGTRAP', 'SIGABRT',
+        'SIGBUS', 'SIGFPE', 'SIGUSR1', 'SIGSEGV', 'SIGUSR2', 'SIGTERM'
+      ],
+      production = process.env.NODE_ENV == 'production';
 
-var Initialize = function(){
-    http.globalAgent.maxSockets = Infinity;
-    process.on('uncaughtException', function(err) {
-        console.error('[auto proxy] Caught uncaughtException: ' + err, err.stack);
-        //process.exit(213);
-    });
-};
+let stopping = false;
 
-var AutoProxyApp = function() {
-
-    //  Scope.
-    var self = this;
-
-    /**
-     *  Set up server IP address and port # using env variables/defaults.
-     */
-    self.setupVariables = function() {
-        //  Set the environment variables we need.
-        self.ipaddress = process.env.OPENSHIFT_NODEJS_IP;
-        self.port      = process.env.OPENSHIFT_NODEJS_PORT || 8888;
-        self.env       = process.env.NODE_ENV || "production";
-        if (typeof self.ipaddress === "undefined") {
-            console.warn('No OPENSHIFT_NODEJS_IP var, using 0.0.0.0');
-            self.ipaddress = "0.0.0.0";
-        };
-    };
-
-
-    /**
-     *  terminator === the termination handler
-     *  Terminate server on receipt of the specified signal.
-     *  @param {string} sig  Signal to terminate on.
-     */
-    self.terminator = function(sig){
-        if (typeof sig === "string") {
-           console.info('%s: Received %s - terminating the app ...',
-                       Date(Date.now()), sig);
-           process.exit(1);
-        }
-        console.info('%s: Node server stopped.', Date(Date.now()) );
-    };
-
-
-    /**
-     *  Setup termination handlers (for exit and a list of signals).
-     */
-    self.setupTerminationHandlers = function(){
-        //  Process on exit and signals.
-        process.on('exit', function() { self.terminator(); });
-
-        ['SIGHUP', 'SIGINT', 'SIGQUIT', 'SIGILL', 'SIGTRAP', 'SIGABRT',
-         'SIGBUS', 'SIGFPE', 'SIGUSR1', 'SIGSEGV', 'SIGUSR2', 'SIGTERM'
-        ].forEach(function(element, index, array) {
-            process.on(element, function() { self.terminator(element); });
-        });
-    };
-
-    self.start = function(){
-      console.log("Environment is :" + self.env);
-      if (self.env === "dev"){
-          utils.respawnable_start(function(){
-            var pacApp = new pac.PacApp();
-            pacApp.start(self.ipaddress,self.port);
-          });
-      }
-      else {
-        // In production, http proxy feature is disabled.
-        var pacApp = new pac.PacApp();
-        pacApp.start(self.ipaddress, self.port);
-
-      }
-
+cluster.on('disconnect', function(worker) {
+  if (production) {
+    if (!stopping) {
+      cluster.fork();
     }
+  } else {
+    process.exit(1);
+  }
+});
 
-    self.initialize = function() {
-        console.info('bootstrap app');
-        self.setupVariables();
-        self.setupTerminationHandlers();
-    };
+if (cluster.isMaster) {
+  const workerCount = process.env.NODE_CLUSTER_WORKERS || 4;
+  console.log(`Starting ${workerCount} workers...`);
+  for (let i = 0; i < workerCount; i++) {
+    cluster.fork();
+  }
+  if (production) {
+    stopSignals.forEach(function (signal) {
+      process.on(signal, function () {
+        console.log(`Got ${signal}, stopping workers...`);
+        stopping = true;
+        cluster.disconnect(function () {
+          console.log('All workers stopped, exiting.');
+          process.exit(0);
+        });
+      });
+    });
+  }
+} else {
+    
+    console.info('bootstrap app');
+    var pac     = require('./pac.js');
+    var ip = process.env.OPENSHIFT_NODEJS_IP || "0.0.0.0";
+    var port = process.env.OPENSHIFT_NODEJS_PORT || 8888;
+    var pacApp = new pac.PacApp();
+    pacApp.start(ip, port);
+}
 
-
-
-};
-
-Initialize();
-var zapp = new AutoProxyApp();
-zapp.initialize();
-zapp.start();
