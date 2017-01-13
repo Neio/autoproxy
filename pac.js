@@ -271,7 +271,7 @@ var PacApp = function() {
             }).on('error', function(err) {
             if (err.code === 'EADDRINUSE') {
                 console.error('[auto proxy] Port number is already in use! Exiting now...');
-                process.exit();
+                //process.exit();
             }
         });
         console.info("Listening to port: " + pacPort);
