@@ -205,11 +205,13 @@ var PacApp = function() {
                 online: true
             }).exec(function(err, onlineCount) {
                 if (err) {
+                    client_response.writeHead(500, {"Content-Type": "text/plain"});
                     client_response.write("HTTP/" + client_request.httpVersion + " 500 DB error\r\n\r\n");
                     client_response.end();
                 } else if (onlineCount > 0) {
                     client_response.end("ON");
                 } else {
+                    client_response.writeHead(500, {"Content-Type": "text/plain"});
                     client_response.write("HTTP/" + client_request.httpVersion + " 500 Connection error\r\n\r\n");
                     client_response.end();
                 }
@@ -259,6 +261,7 @@ var PacApp = function() {
                     client_response.end(live_content);
                 });
             } else {
+                client_response.writeHead(500, {"Content-Type": "text/plain"});
                 client_response.write("HTTP/" + client_request.httpVersion + " 500 Connection error\r\n\r\n");
                 client_response.end();
             }
@@ -273,8 +276,35 @@ var PacApp = function() {
             return;
         }
 
+        if (requrl.pathname === "/cleanproxy") {
+            db.Proxy.count({
+                online: false
+            }).remove().exec(function(err, removed) {
+                client_response.end("data are removed " + removed);
+            });
+            return;
+        }
+
+        if (requrl.pathname === "/help"){
+            client_response.write("Supported:\r\n")
+            client_response.write("/proxy.pac[?debug=true]\r\n");
+            client_response.write("/stat\r\n");
+            client_response.write("/status\r\n");
+            client_response.write("/update\r\n");
+            client_response.write("/cleanproxy\r\n");
+            client_response.write("/addproxy?proxy=\r\n");
+            client_response.end();
+            return;
+        }
+
+        if (requrl.pathname === "/"){
+            client_response.end("Service is running...");
+            return;
+        }
+
         console.info("Cannot response to: " + client_request.url);
-        client_response.end('OK');
+        client_response.writeHead(404, {"Content-Type": "text/plain"});
+        client_response.end("404 Not found");
     }
 
     self.schedule_tasks = function() {
