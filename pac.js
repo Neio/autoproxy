@@ -12,8 +12,7 @@ require('datejs');
 require('./logpatch.js');
 
 var remote_filter_url = process.env.REMOTE_FILTER_URL || 'https://gist.githubusercontent.com/Neio/73e038f6129d07b2cb54/raw/urls.js';
-var data_tran_url = process.env.DATA_TRAN_URL;
-var data_source_url = process.env.DATA_SOURCE_URL;
+
 var proxy_checker_param = {
     url: "http://www.ip138.com",
     regex: /ip/
@@ -26,6 +25,8 @@ var PacApp = function() {
     var self = this;
 
     self.update_from_source = function() {
+        var data_tran_url = process.env.DATA_TRAN_URL;
+        var data_source_url = process.env.DATA_SOURCE_URL;
         if (!data_source_url) {
             console.log("Data source url is empty");
             return;
@@ -34,8 +35,10 @@ var PacApp = function() {
             console.log("Data transformation url is empty");
             return;
         }
+        console.log("Requesting data translator from " + data_tran_url);
         request(data_tran_url, function(error, response, body) {
             if (!error && response.statusCode == 200) {
+                console.log("God data translator. ");
                 dataSource.getData(data_source_url, body, function(err, rt) {
                     if (err) {
                         console.log("Error occurred when getting data source from url " + data_source_url);
@@ -47,8 +50,8 @@ var PacApp = function() {
                         console.log(newData);
                         newData.forEach(function(entry) {
                             if (entry) {
-                                self.add_proxy(entry, function(msg){
-                                   console.log(msg);
+                                self.add_proxy(entry, function(msg) {
+                                    console.log(msg);
                                 });
                             }
                         });
@@ -93,7 +96,7 @@ var PacApp = function() {
                         if (err) return console.error(err);
                         console.info(result);
                     });
-                    callback("Proxy " + requestedProxy+ " is successfully added and alive.");
+                    callback("Proxy " + requestedProxy + " is successfully added and alive.");
                 } else {
                     callback("Proxy " + requestedProxy + " is offline and would not be added.");
                 }
@@ -106,9 +109,10 @@ var PacApp = function() {
         console.info("updating filters...");
         request(remote_filter_url, function(error, response, body) {
             if (!error && response.statusCode == 200) {
-                var result = JSON.parse(minify(body));
-                console.info("updated with: ");
-                console.info(result);
+                var data = minify(body);
+                var result = JSON.parse(data);
+                console.info("Got updated filters: " + data.substr(0, 100) + "...");
+
                 if (result.filters) {
                     filters = result.filters;
                 } else {
@@ -257,21 +261,28 @@ var PacApp = function() {
         // Filters would be auto checked every 5 minutes
         setTimeout(function() {
             self.update_filter();
-        }, 100);
+        }, 500);
         setInterval(function() {
             self.update_filter();
         }, 1000 * 60 * 5);
+
+        setTimeout(function() {
+            self.update_from_source();
+        }, 500);
+        setInterval(function() {
+            self.update_from_source();
+        }, 1000 * 60 * 30);
     };
 
     self.start = function(pacIp, pacPort) {
         var server = http.createServer();
         server.on('request', self.response_handler);
-        server.listen(pacPort, pacIp, function(){
-                console.log("Listening on " + pacIp + ", server_port " + pacPort);
-            }).on('error', function(err) {
+        server.listen(pacPort, pacIp, function() {
+            console.log("Listening on " + pacIp + ", server_port " + pacPort);
+        }).on('error', function(err) {
             if (err.code === 'EADDRINUSE') {
                 console.error('[auto proxy] Port number is already in use! Exiting now...');
-                //process.exit();
+                process.exit();
             }
         });
         console.info("Listening to port: " + pacPort);

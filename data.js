@@ -13,7 +13,7 @@ var html2xhtml = function(htmlString) {
 };
 
 var getData = function(dataUrl, xsltString, callback) {
-    
+
     var libxslt = require('libxslt');
     libxslt.parse(xsltString, function(err, stylesheet) {
         if (err) {
@@ -25,7 +25,7 @@ var getData = function(dataUrl, xsltString, callback) {
                 hideComments: true, //  multi word options can use a hyphen or "camel case"
                 indent: false
             };
-
+            console.log("Requesting data from " + dataUrl);
             var stream = request.get(dataUrl).pipe(tidy.createWorker(opts));
 
             var doc = ''
