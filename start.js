@@ -64,6 +64,7 @@ var AutoProxyApp = function() {
     };
 
     self.start = function(){
+      console.log("Environment is :" + self.env);
       if (self.env === "dev"){
           utils.respawnable_start(function(){
             var pacApp = new pac.PacApp();
