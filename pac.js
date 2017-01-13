@@ -115,6 +115,17 @@ var PacApp = function() {
 
                 if (result.filters) {
                     filters = result.filters;
+                    var regex_to_extract_domain = /^https?:\/\/[^\/]*/i;
+                    var new_list = filters;
+                    var length = filters.length;
+                    // Remove all path info due to the latest iOS update
+                    for (var i = 0; i < length; i++) {
+                        new_list.push(filters[i].match(regex_to_extract_domain)[0] + '/*');
+                    }
+                    filters = new_list.filter(function(item, index, inputArray) {
+                        return inputArray.indexOf(item) == index;
+                    });
+
                 } else {
                     console.warn("Failed to get filters, please verify the content of " + remote_filter_url);
                 }
@@ -205,13 +216,17 @@ var PacApp = function() {
                 online: true
             }).exec(function(err, onlineCount) {
                 if (err) {
-                    client_response.writeHead(500, {"Content-Type": "text/plain"});
+                    client_response.writeHead(500, {
+                        "Content-Type": "text/plain"
+                    });
                     client_response.write("HTTP/" + client_request.httpVersion + " 500 DB error\r\n\r\n");
                     client_response.end();
                 } else if (onlineCount > 0) {
                     client_response.end("ON");
                 } else {
-                    client_response.writeHead(500, {"Content-Type": "text/plain"});
+                    client_response.writeHead(500, {
+                        "Content-Type": "text/plain"
+                    });
                     client_response.write("HTTP/" + client_request.httpVersion + " 500 Connection error\r\n\r\n");
                     client_response.end();
                 }
@@ -261,7 +276,9 @@ var PacApp = function() {
                     client_response.end(live_content);
                 });
             } else {
-                client_response.writeHead(500, {"Content-Type": "text/plain"});
+                client_response.writeHead(500, {
+                    "Content-Type": "text/plain"
+                });
                 client_response.write("HTTP/" + client_request.httpVersion + " 500 Connection error\r\n\r\n");
                 client_response.end();
             }
@@ -285,7 +302,7 @@ var PacApp = function() {
             return;
         }
 
-        if (requrl.pathname === "/help"){
+        if (requrl.pathname === "/help") {
             client_response.write("Supported:\r\n")
             client_response.write("/proxy.pac[?debug=true]\r\n");
             client_response.write("/stat\r\n");
@@ -297,13 +314,15 @@ var PacApp = function() {
             return;
         }
 
-        if (requrl.pathname === "/"){
+        if (requrl.pathname === "/") {
             client_response.end("Service is running...");
             return;
         }
 
         console.info("Cannot response to: " + client_request.url);
-        client_response.writeHead(404, {"Content-Type": "text/plain"});
+        client_response.writeHead(404, {
+            "Content-Type": "text/plain"
+        });
         client_response.end("404 Not found");
     }
 
