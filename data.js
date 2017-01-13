@@ -2,8 +2,6 @@
 
 var fs = require('fs');
 var http = require('http');
-
-var libxslt = require('libxslt');
 var request = require('request');
 var tidy = require('htmltidy2');
 var xmlserializer = require('xmlserializer');
@@ -15,6 +13,8 @@ var html2xhtml = function(htmlString) {
 };
 
 var getData = function(dataUrl, xsltString, callback) {
+    
+    var libxslt = require('libxslt');
     libxslt.parse(xsltString, function(err, stylesheet) {
         if (err) {
             console.log('failed to parse xslt');
@@ -43,9 +43,6 @@ var getData = function(dataUrl, xsltString, callback) {
 
                     callback(err, result);
                 });
-
-
-
             });
         }
     });
