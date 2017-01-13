@@ -149,18 +149,16 @@ var PacApp = function() {
                         } else {
                             console.info("Proxy Status update: " + proxy.name + ": online = " + result + ' ping = ' + elapsedTime + 'ms');
                         }
-
-                        proxy.online = result;
+                        var alive = result && elapsedTime < 5000
+                        proxy.online = alive;
                         proxy.updated = new Date();
-                        if (result) {
+                        if (alive) {
                             proxy.lastLive = new Date();
                         }
                         proxy.updatedDisplayInfo = new Date().toISOString();
                         proxy.ping = elapsedTime;
                         console.info(proxy);
                         proxy.save();
-
-
                     });
                 })(proxies[i]);
             }
@@ -184,15 +182,45 @@ var PacApp = function() {
             self.update_proxy_status();
             self.update_filter();
             self.update_from_source();
-            var result = 'Update is triggerred';
-            client_response.writeHead(200, {
-                'Content-Type': 'text/html',
-                'Content-Length': result.length,
-                'Cache-Control': 'public, max-age=10'
-            });
-            client_response.end(result);
+            client_response.end('Update is triggerred');
             return;
         }
+
+        if (client_request.url === '/stat') {
+            db.Proxy.count({
+                online: true
+            }).exec(function(err, onlineCount) {
+                db.Proxy.count({
+                    online: false
+                }).exec(function(err, offlineCount) {
+                    client_response.end("ONLINE:" + onlineCount + ", OFFLINE: " + offlineCount);
+                });
+            });
+
+            return;
+        }
+
+        if (client_request.url === '/status') {
+            db.Proxy.count({
+                online: true
+            }).exec(function(err, onlineCount) {
+                if (err) {
+                    client_response.write("HTTP/" + client_request.httpVersion + " 500 DB error\r\n\r\n");
+                    client_response.end();
+                } else if (onlineCount > 0) {
+                    client_response.end("ON");
+                } else {
+                    client_response.write("HTTP/" + client_request.httpVersion + " 500 Connection error\r\n\r\n");
+                    client_response.end();
+                }
+
+            });
+
+            return;
+        }
+
+        var requrl = url.parse(client_request.url, true);
+
         if (client_request.url === "/proxies") {
             db.Proxy.find({}).sort({
                 ping: 1
@@ -204,7 +232,6 @@ var PacApp = function() {
             return;
         }
 
-        var requrl = url.parse(client_request.url, true);
         if (requrl.pathname === "/proxy.pac") {
             var content_type = 'application/x-ns-proxy-autoconfig';
             if (requrl.query.debug || client_request.headers['user-agent'] !== undefined &&
@@ -227,7 +254,7 @@ var PacApp = function() {
                     client_response.writeHead(200, {
                         'Content-Type': content_type,
                         'Content-Length': live_content.length.toString(),
-                        'Cache-Control': 'public, max-age=60'
+                        'Cache-Control': 'public, max-age=90'
                     });
                     client_response.end(live_content);
                 });
