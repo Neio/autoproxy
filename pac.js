@@ -177,6 +177,43 @@ var PacApp = function() {
         });
     }
 
+    self.sendPac = function(client_request, client_response, filter) {
+        var content_type = 'application/x-ns-proxy-autoconfig';
+
+        var requrl = url.parse(client_request.url, true);
+        if (requrl.query.debug === 'true') {
+            console.log("Using debug mode.")
+            content_type = 'text/plain';
+        }
+        if (db.connected) {
+            console.info('using db proxy data...');
+            db.Proxy.find({
+                online: true
+            }).sort({
+                ping: 1
+            }).limit(3).exec(function(err, proxies) {
+                if (err) {
+                    console.info("Error: " + err);
+                    client_response.end("ERROR");
+                    return;
+                }
+                var live_content = utils.pac_content_generator(proxies, filter);
+                client_response.writeHead(200, {
+                    'Content-Type': content_type,
+                    'Content-Length': live_content.length.toString(),
+                    'Cache-Control': 'public, max-age=90'
+                });
+                client_response.end(live_content);
+            });
+        } else {
+            client_response.writeHead(500, {
+                "Content-Type": "text/plain"
+            });
+            client_response.write("HTTP/" + client_request.httpVersion + " 500 Connection error\r\n\r\n");
+            client_response.end();
+        }
+    }
+
     self.response_handler = function(client_request, client_response) {
         console.info(client_request.url);
         if (client_request.url === '/crossdomain.xml') {
@@ -251,43 +288,12 @@ var PacApp = function() {
         }
 
         if (requrl.pathname === "/proxy.pac") {
-            var content_type = 'application/x-ns-proxy-autoconfig';
-            if (requrl.query.debug || client_request.headers['user-agent'] !== undefined &&
-                client_request.headers['user-agent'].indexOf('PhantomJS') !== -1) {
-                content_type = 'text/plain';
-            }
-            if (db.connected) {
-                console.info('using db proxy data...');
-                db.Proxy.find({
-                    online: true
-                }).sort({
-                    ping: 1
-                }).limit(3).exec(function(err, proxies) {
-                    if (err) {
-                        console.info("Error: " + err);
-                        client_response.end("ERROR");
-                        return;
-                    }
-                    var f = filters;
-                    if (requrl.query.domain === 'true'){
-                       console.log("Using domain only filter");
-                       f = filtersDomainOnly;
-                    }
-                    var live_content = utils.pac_content_generator(proxies, f);
-                    client_response.writeHead(200, {
-                        'Content-Type': content_type,
-                        'Content-Length': live_content.length.toString(),
-                        'Cache-Control': 'public, max-age=90'
-                    });
-                    client_response.end(live_content);
-                });
-            } else {
-                client_response.writeHead(500, {
-                    "Content-Type": "text/plain"
-                });
-                client_response.write("HTTP/" + client_request.httpVersion + " 500 Connection error\r\n\r\n");
-                client_response.end();
-            }
+            self.sendPac(client_request, client_response, filters);
+            return;
+        }
+
+        if (requrl.pathname === "/ios.pac") {
+            self.sendPac(client_request, client_response, filtersDomainOnly);
             return;
         }
 
@@ -310,7 +316,8 @@ var PacApp = function() {
 
         if (requrl.pathname === "/help") {
             client_response.write("Supported:\r\n")
-            client_response.write("/proxy.pac[?debug=true]\r\n");
+            client_response.write("/proxy.pac[?debug=true] ==> normal filter rule.\r\n");
+            client_response.write("/ios.pac[?debug=true]   ==> domain only filter rule.\r\n");
             client_response.write("/stat\r\n");
             client_response.write("/status\r\n");
             client_response.write("/update\r\n");
