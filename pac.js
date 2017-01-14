@@ -18,6 +18,7 @@ var proxy_checker_param = {
     regex: /ip/
 };
 var filters = [];
+var filtersDomainOnly = [];
 
 var PacApp = function() {
 
@@ -116,13 +117,13 @@ var PacApp = function() {
                 if (result.filters) {
                     filters = result.filters;
                     var regex_to_extract_domain = /^https?:\/\/[^\/]*/i;
-                    var new_list = filters;
+                    var new_list = [];
                     var length = filters.length;
                     // Remove all path info due to the latest iOS update
                     for (var i = 0; i < length; i++) {
                         new_list.push(filters[i].match(regex_to_extract_domain)[0] + '/*');
                     }
-                    filters = new_list.filter(function(item, index, inputArray) {
+                    filtersDomainOnly = new_list.filter(function(item, index, inputArray) {
                         return inputArray.indexOf(item) == index;
                     });
 
@@ -267,7 +268,12 @@ var PacApp = function() {
                         client_response.end("ERROR");
                         return;
                     }
-                    var live_content = utils.pac_content_generator(proxies, filters);
+                    var f = filters;
+                    if (requrl.query.domain === 'true'){
+                       console.log("Using domain only filter");
+                       f = filtersDomainOnly;
+                    }
+                    var live_content = utils.pac_content_generator(proxies, f);
                     client_response.writeHead(200, {
                         'Content-Type': content_type,
                         'Content-Length': live_content.length.toString(),
